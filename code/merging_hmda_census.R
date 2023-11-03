@@ -10,8 +10,8 @@ hmda_data <- read.csv("/Users/matthewcolantonio/Documents/Research/HMDA/rawdata/
 unique_census_tracts <- unique(hmda_data$census_tract)
 # Convert the unique census blocks to a list
 census_tract_list <- as.list(unique_census_tracts)
-# you will need your own Censsu API key to replicate this code
-census_api_key("e8c3122e8584f0de407bfdd90c617f2213408ffe") 
+# you will need your own Census API key to replicate this code
+census_api_key("YOUR API KEY") # enter your personal API key obtained from the census site
 
 # Set the desired year
 year <- 2021
