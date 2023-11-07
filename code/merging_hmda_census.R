@@ -4,7 +4,7 @@ library(dplyr)
 library(tidyr)
 library(reshape2)
 
-hmda_data <- read.csv("/Users/matthewcolantonio/Documents/Research/HMDA/rawdata/hmda_MA.csv")
+hmda_data <- read.csv("hmda_MA.csv")
 
 # creating a list of unique census tracts
 unique_census_tracts <- unique(hmda_data$census_tract)
@@ -72,7 +72,7 @@ colnames(census_data_MA)<- c(
 )
 
 # save the census data separately
-file_path <- "/Users/matthewcolantonio/Documents/Research/HMDA/rawdata/census_data_MA.csv"
+file_path <- "HMDA/rawdata/census_data_MA.csv"
 write.csv(census_data_MA, file = file_path, row.names = FALSE)
 
 
@@ -87,7 +87,7 @@ hmda_and_census %>%
 # parcel_and_census <- na.omit(parcel_and_census) # if you want to remove missing values 
 
 # now save this dataframe (saveddata folder)
-file_path <- "/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/hmda_and_census.csv"
+file_path <- "HMDA/saveddata/hmda_and_census.csv"
 write.csv(hmda_and_census, file = file_path, row.names = FALSE)
 
 
