@@ -47,6 +47,83 @@ new_df = df[variables_to_keep]
 new_df.info() 
 # some variables are coded, and to interpret results from any models we decide to run we should be aware of the codes
 # if variables included in the new_df object are deemed unecessary, they can be removed from the variables_to_keep list
+#%%
+# reminder: object = Text or mixed numeric and non-numeric values
+# float64 = Floating point numbers
+# to facilitate analysis, we should understand what we have in terms of object values
+
+# Get descriptive statistics for object-type columns
+object_stats = new_df.describe(include='O')
+
+# Get unique values and value counts for each object-type column
+object_unique_values = {}
+object_value_counts = {}
+
+for column in new_df.select_dtypes(include='O').columns:
+    object_unique_values[column] = new_df[column].unique()
+    object_value_counts[column] = new_df[column].value_counts()
+
+# Print or display the results
+print("\nDescriptive Statistics for Object-Type Columns:")
+print(object_stats)
+
+print("\nUnique Values for Object-Type Columns:")
+for column, values in object_unique_values.items():
+    print(f"{column}: {values}")
+
+print("\nValue Counts for Object-Type Columns:")
+for column, counts in object_value_counts.items():
+    print(f"{column}:\n{counts}")
+
+#%% Label Encoding
+# Create a new DataFrame to store the converted data
+from sklearn.preprocessing import LabelEncoder
+hmda_encoded = new_df.copy()
+# Apply label encoding to each object-type column
+label_encoder = LabelEncoder()
+for column in hmda_encoded.select_dtypes(include='O').columns:
+    hmda_encoded[column] = label_encoder.fit_transform(hmda_encoded[column])
+
+# Now, 'hmda_encoded' contains the converted data for use in analysis
+
+hmda_encoded.info()
+
+#%% Some data exploration
+import seaborn as sns
+import matplotlib.pyplot as plt
+import geopandas as gpd
+
+# Choose the variables for correlation plots
+correlation_vars = ['loan_amount', 'income', 'applicant_age', 'debt_to_income_ratio', 'action_taken']
+
+# Subset the DataFrame with the selected variables
+correlation_data = hmda_encoded[correlation_vars]
+
+# Create a pair plot for the selected variables
+sns.pairplot(correlation_data, hue='action_taken', palette='viridis')
+plt.show()
+
+# Create a correlation heatmap
+correlation_matrix = correlation_data.corr()
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', linewidths=0.5)
+plt.title('Correlation Heatmap')
+plt.show()
+
+#%% Mapping - need shapefile
+# Creating a map displaying average loan_amount in each census tract
+# tract_avg_loan_amount = hmda_encoded.groupby('census_tract')['loan_amount'].mean().reset_index()
+
+# Load a shapefile with census tract geometries (replace 'your_shapefile.shp' with the path to your shapefile)
+# census_tracts = gpd.read_file('your_shapefile.shp')
+
+# Merge the tract_avg_loan_amount data with the census_tracts GeoDataFrame
+#tracts_with_loan_amount = census_tracts.merge(tract_avg_loan_amount, on='census_tract')
+
+# Plot the map
+#fig, ax = plt.subplots(1, 1, figsize=(12, 8))
+#tracts_with_loan_amount.plot(column='loan_amount', cmap='YlOrRd', linewidth=0.8, ax=ax, edgecolor='0.8', legend=True)
+#plt.title('Average Loan Amount by Census Tract')
+#plt.show()
 
 
 
