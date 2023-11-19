@@ -65,32 +65,78 @@ for column in new_df.select_dtypes(include='O').columns:
     object_value_counts[column] = new_df[column].value_counts()
 #%% 
 # different data manipulations need to be done based on the type of object
+cleaned_df = new_df.dropna() # a lot of data is categorical, imputing won't do us any good here
+# action_taken is target. 8 values won't work for logit, so we are reducing to accepted, denied, or 'other'
+action_taken_mapping = {1: 1, 2: 1, 3: 2, 4: 3, 5: 3, 6: 3, 7:3, 8:3}
+cleaned_df['action_taken'] = cleaned_df['action_taken'].replace(action_taken_mapping)
+print(cleaned_df['action_taken'].value_counts()) # verify
+
+cleaned_df['loan_to_value_ratio'] = pd.to_numeric(cleaned_df['loan_to_value_ratio'], errors='coerce')
+print(cleaned_df['loan_to_value_ratio'].dtype) # verify
+cleaned_df['property_value'] = pd.to_numeric(cleaned_df['property_value'], errors='coerce')
+print(cleaned_df['property_value'].dtype)
+
+#debt_to_income_ratio needs some work
+cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('[%<>]', '', regex=True)
+# Replace 'Exempt' with NaN (you can use 0 or any other value as needed)
+cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('Exempt', pd.NA)
+# Convert ranges to average values
+cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].apply(lambda x: eval(x.replace('-', '+')) / 2 if pd.notna(x) else x)
+# Convert 'debt_to_income_ratio' to float
+cleaned_df['debt_to_income_ratio'] = pd.to_numeric(cleaned_df['debt_to_income_ratio'], errors='coerce')
+# Define the bin edges for the desired ranges
+bin_edges = [-float('inf'), 20, 30, 36, 43, 49, 60, float('inf')]
+# Define the bin labels
+bin_labels = ['<20', '20-30', '30-36', '37-43', '44-49', '50-60', '>60']
+# Create a new column with the specified bins
+cleaned_df['debt_to_income_ratio_range'] = pd.cut(cleaned_df['debt_to_income_ratio'], bins=bin_edges, labels=bin_labels)
+# Verify the result
+print(cleaned_df['debt_to_income_ratio_range'].value_counts())
+# Drop the original 'debt_to_income_ratio' column if you want
+cleaned_df = cleaned_df.drop(columns=['debt_to_income_ratio'])
+
+# Create dummy variables for each categorical variable
+categorical_vars = ["derived_ethnicity", "derived_race", "derived_sex", "derived_loan_product_type", "debt_to_income_ratio_range", "applicant_age", "derived_dwelling_category"  ] 
+
+for var in categorical_vars:
+    dummies = pd.get_dummies(cleaned_df[var], prefix=var, drop_first=True)
+    cleaned_df = pd.concat([cleaned_df, dummies], axis=1)
+    cleaned_df.drop(var, axis=1, inplace=True)  # Drop original column after creating dummies
+
+#%%
 # =============================================================================
-# cleaned_df = new_df.dropna() # a lot of data is categorical, imputing won't do us any good here
-# # action_taken is target. 8 values won't work for logit, so we are reducing to accepted, denied, or 'other'
-# action_taken_mapping = {1: 1, 2: 1, 3: 2, 4: 3, 5: 3, 6: 3, 7:3, 8:3}
-# cleaned_df['action_taken'] = cleaned_df['action_taken'].replace(action_taken_mapping)
-# print(cleaned_df['action_taken'].value_counts()) # verify
 # 
-# cleaned_df['loan_to_value_ratio'] = pd.to_numeric(cleaned_df['loan_to_value_ratio'], errors='coerce')
-# print(cleaned_df['loan_to_value_ratio'].dtype) # verify
-# cleaned_df['property_value'] = pd.to_numeric(cleaned_df['property_value'], errors='coerce')
+# # different data manipulations need to be done based on the type of object
+# cleaned_df = new_df.dropna() # a lot of data is categorical, imputing won't do us any good here
+# 
+# # action_taken is target. 8 values won't work for logit, so we are reducing to accepted, denied, or 'other'
+# action_taken_mapping = {1: 1, 2: 1, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3}
+# cleaned_df.loc[:, 'action_taken'] = cleaned_df['action_taken'].replace(action_taken_mapping)
+# print(cleaned_df['action_taken'].value_counts())  # verify
+# 
+# cleaned_df.loc[:, 'loan_to_value_ratio'] = pd.to_numeric(cleaned_df['loan_to_value_ratio'], errors='coerce')
+# print(cleaned_df['loan_to_value_ratio'].dtype)  # verify
+# cleaned_df.loc[:, 'property_value'] = pd.to_numeric(cleaned_df['property_value'], errors='coerce')
 # print(cleaned_df['property_value'].dtype)
 # 
-# #debt_to_income_ratio needs some work
-# cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('[%<>]', '', regex=True)
+# # debt_to_income_ratio needs some work
+# cleaned_df.loc[:, 'debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('[%<>]', '', regex=True)
 # # Replace 'Exempt' with NaN (you can use 0 or any other value as needed)
-# cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('Exempt', pd.NA)
+# cleaned_df.loc[:, 'debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('Exempt', pd.NA)
 # # Convert ranges to average values
-# cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].apply(lambda x: eval(x.replace('-', '+')) / 2 if pd.notna(x) else x)
+# cleaned_df.loc[:, 'debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].apply(
+#     lambda x: eval(x.replace('-', '+')) / 2 if pd.notna(x) else x
+# )
 # # Convert 'debt_to_income_ratio' to float
-# cleaned_df['debt_to_income_ratio'] = pd.to_numeric(cleaned_df['debt_to_income_ratio'], errors='coerce')
+# cleaned_df.loc[:, 'debt_to_income_ratio'] = pd.to_numeric(cleaned_df['debt_to_income_ratio'], errors='coerce')
 # # Define the bin edges for the desired ranges
 # bin_edges = [-float('inf'), 20, 30, 36, 43, 49, 60, float('inf')]
 # # Define the bin labels
 # bin_labels = ['<20', '20-30', '30-36', '37-43', '44-49', '50-60', '>60']
 # # Create a new column with the specified bins
-# cleaned_df['debt_to_income_ratio_range'] = pd.cut(cleaned_df['debt_to_income_ratio'], bins=bin_edges, labels=bin_labels)
+# cleaned_df.loc[:, 'debt_to_income_ratio_range'] = pd.cut(
+#     cleaned_df['debt_to_income_ratio'], bins=bin_edges, labels=bin_labels
+# )
 # # Verify the result
 # print(cleaned_df['debt_to_income_ratio_range'].value_counts())
 # # Drop the original 'debt_to_income_ratio' column if you want
@@ -105,73 +151,22 @@ for column in new_df.select_dtypes(include='O').columns:
 #     cleaned_df.drop(var, axis=1, inplace=True)  # Drop original column after creating dummies
 # =============================================================================
 
-#%%
-
-# different data manipulations need to be done based on the type of object
-cleaned_df = new_df.dropna() # a lot of data is categorical, imputing won't do us any good here
-
-# action_taken is target. 8 values won't work for logit, so we are reducing to accepted, denied, or 'other'
-action_taken_mapping = {1: 1, 2: 1, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3}
-cleaned_df.loc[:, 'action_taken'] = cleaned_df['action_taken'].replace(action_taken_mapping)
-print(cleaned_df['action_taken'].value_counts())  # verify
-
-cleaned_df.loc[:, 'loan_to_value_ratio'] = pd.to_numeric(cleaned_df['loan_to_value_ratio'], errors='coerce')
-print(cleaned_df['loan_to_value_ratio'].dtype)  # verify
-cleaned_df.loc[:, 'property_value'] = pd.to_numeric(cleaned_df['property_value'], errors='coerce')
-print(cleaned_df['property_value'].dtype)
-
-# debt_to_income_ratio needs some work
-cleaned_df.loc[:, 'debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('[%<>]', '', regex=True)
-# Replace 'Exempt' with NaN (you can use 0 or any other value as needed)
-cleaned_df.loc[:, 'debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('Exempt', pd.NA)
-# Convert ranges to average values
-cleaned_df.loc[:, 'debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].apply(
-    lambda x: eval(x.replace('-', '+')) / 2 if pd.notna(x) else x
-)
-# Convert 'debt_to_income_ratio' to float
-cleaned_df.loc[:, 'debt_to_income_ratio'] = pd.to_numeric(cleaned_df['debt_to_income_ratio'], errors='coerce')
-# Define the bin edges for the desired ranges
-bin_edges = [-float('inf'), 20, 30, 36, 43, 49, 60, float('inf')]
-# Define the bin labels
-bin_labels = ['<20', '20-30', '30-36', '37-43', '44-49', '50-60', '>60']
-# Create a new column with the specified bins
-cleaned_df.loc[:, 'debt_to_income_ratio_range'] = pd.cut(
-    cleaned_df['debt_to_income_ratio'], bins=bin_edges, labels=bin_labels
-)
-# Verify the result
-print(cleaned_df['debt_to_income_ratio_range'].value_counts())
-# Drop the original 'debt_to_income_ratio' column if you want
-cleaned_df = cleaned_df.drop(columns=['debt_to_income_ratio'])
-
-# Create dummy variables for each categorical variable
-categorical_vars = ["derived_ethnicity", "derived_race", "derived_sex", "derived_loan_product_type", "debt_to_income_ratio_range", "applicant_age", "derived_dwelling_category"  ] 
-
-for var in categorical_vars:
-    dummies = pd.get_dummies(cleaned_df[var], prefix=var, drop_first=True)
-    cleaned_df = pd.concat([cleaned_df, dummies], axis=1)
-    cleaned_df.drop(var, axis=1, inplace=True)  # Drop original column after creating dummies
-
 #%% Some plots
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 #print(cleaned_df.columns)
 
-correlation_vars = ['loan_amount', 'income', 'debt_to_income_ratio_range_20-30', 
-                    'debt_to_income_ratio_range_30-36', 'debt_to_income_ratio_range_37-43', 
-                    'debt_to_income_ratio_range_44-49','debt_to_income_ratio_range_50-60', 
-                    'debt_to_income_ratio_range_>60','applicant_age_35-44', 'applicant_age_45-54', 
-                    'applicant_age_55-64','applicant_age_65-74', 'applicant_age_8888', 'applicant_age_<25',
-                    'applicant_age_>74', 'action_taken']
+correlation_vars = ['loan_amount', 'income', 'applicant_age', 'debt_to_income_ratio_range', 
+                    'action_taken']
 
 
 # Subset the DataFrame with the selected variables
 correlation_data = cleaned_df[correlation_vars]
 
 # Create a pair plot for the selected variables
-#sns.pairplot(correlation_data, hue='action_taken', palette='viridis')
-# Try without hue
-sns.pairplot(correlation_data, palette='viridis')
+sns.pairplot(correlation_data, hue='action_taken', palette='viridis')
+
 plt.show()
 
 # Create a correlation heatmap
