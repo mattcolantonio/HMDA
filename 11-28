@@ -4,6 +4,7 @@ What needs to be edited:
 	- it might even be worth creating a .shp file with geographic characteristics for creating maps and saving the .shp separately.
 4. Might be useful to have some more visualizations, charts, graphs, maps. Variable significance as determined by our final models may also illuminate which variables would benefit from graphing or mapping. 
 5. Since our logit is multinomial (3 possible outcomes), we must specify 'multinomial' when using sklearn package. 
+	- we might want to explore also some different regularization metods for variable selection
 6. The single tree is not very useful to analysis. Something like a Random Forest may be better, since it determines feature importance by running up to 100 trees. 
 
 I have code setup for saving teh cleaned df and creating a .shp that wil be executed once the cleaned_df is in its final form.
