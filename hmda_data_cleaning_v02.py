@@ -92,9 +92,9 @@ cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].apply(la
 # Convert 'debt_to_income_ratio' to float
 cleaned_df['debt_to_income_ratio'] = pd.to_numeric(cleaned_df['debt_to_income_ratio'], errors='coerce')
 # Define the bin edges for the desired ranges
-bin_edges = [-float('inf'), 20, 30, 36, 43, 49, 59, float('inf')]
+bin_edges = [-float('inf'), 20, 30, 31, 49, 59, float('inf')]
 # Define the bin labels
-bin_labels = ['<20', '20-30', '30-36', '37-43', '44-49', '50-60', '>60']
+bin_labels = ['<20', '20-30', '30-49', '>50']
 # Create a new column with the specified bins
 cleaned_df['debt_to_income_ratio_range'] = pd.cut(cleaned_df['debt_to_income_ratio'], bins=bin_edges, labels=bin_labels)
 # Verify the result
@@ -113,31 +113,30 @@ for var in categorical_vars:
     cleaned_df.drop(var, axis=1, inplace=True)  # Drop original column after creating dummies
 
 # new columns names
-print(cleaned_df.columns)
+print(cleaned_df.columns) # it looks like some weird values made it thru (eg applicant_age_8888)- these won't help in modeling
+# 'True' values for any of the following are useless to us (essentially = to null values)
+dummy_columns_to_check = [
+    'derived_ethnicity_Free Form Text Only',
+    'derived_race_Free Form Text Only',
+    'derived_sex_Sex Not Available',
+    'applicant_age_8888',
+    'derived_race_Joint',
+    'derived_sex_Joint',
+    'derived_race_Race Not Available'
+]
 
-# Fore dummies, it is important to know the reference group- coefficents from models on dummies are coefficents relative to other groups
+# Step 1: Remove rows where any of the specified dummy columns has a value
+cleaned_df = cleaned_df[~cleaned_df[dummy_columns_to_check].any(axis=1)]
+# Step 2: Remove the specified dummy columns
+cleaned_df = cleaned_df.drop(columns=dummy_columns_to_check)
+# Optional: Reset the index if needed
+cleaned_df = cleaned_df.reset_index(drop=True)
+
+print(cleaned_df.columns) # looks better
+
+# For dummies, it is important to know the reference group- coefficents from models on dummies are coefficents relative to other groups
 # dummy variables for categorical_vars
 
-reference_categories = {}
-
-for var in categorical_vars:
-    # Get the unique categories after creating dummies
-    categories_after_dummies = [col for col in cleaned_df.columns if var in col and '_1' in col]
-
-    # Check if dummy variables were created
-    if not categories_after_dummies:
-        print(f"No dummy variables created for {var}. Check if there's an issue.")
-        continue
-
-    # Extract the original category name (before creating dummies)
-    original_category = categories_after_dummies[0].replace('_1', '')
-
-    reference_categories[var] = original_category
-
-# Print the reference categories
-print("Reference Categories:")
-for var, ref_category in reference_categories.items():
-    print(f"{var}: {ref_category}")
 
 
 #%% Export cleaned data frame
@@ -159,16 +158,19 @@ print(f"Data exported to: {output_file_path}")
 import geopandas as gpd
 from geodatasets import get_path
 
-path_to_shape = "/Users/matthewcolantonio/Documents/Research/HMDA/rawdata/CENSUS2020_BLK_BG_TRCT_MA.zip" 
+path_to_shape = "/Users/matthewcolantonio/Documents/Research/HMDA/rawdata/tl_2020_25_tract.zip" 
 # yes, upload the entire zipfile
 census_shape = gpd.read_file(path_to_shape)
-census_shape['TRACTCE20'] = census_shape['TRACTCE20'].astype(float)
 
-#cleaned_df2 = cleaned_df['census_tract'] % 1000000
+print(cleaned_df['census_tract'].dtype)
+print(census_shape['GEOID'].dtype)
+census_shape['GEOID'] = pd.to_numeric(census_shape['GEOID'], errors='coerce')
 
 
-#shp_data = census_shape.merge(cleaned_df2, left_on='TRACTCE20', right_on='census_tract', how='inner')
-
+shp_data = census_shape.merge(cleaned_df, left_on='GEOID', right_on='census_tract', how='inner')
+# remove unecessary columns resulting from the merge
+columns_to_remove = ['STATEFP', 'COUNTYFP', 'TRACTCE', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER', 'census_tract']
+shp_data = shp_data.drop(columns=columns_to_remove)
 
 # Save the filtered data to a new shapefile
 #shp_data.to_file("/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/shp_data.shp", driver='ESRI Shapefile')
