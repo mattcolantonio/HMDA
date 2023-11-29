@@ -169,8 +169,9 @@ y=cleaned_df2['action_taken']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 #Train the model on the training set
-log_model=LogisticRegression(multi_class='multinomial', solver='lbfgs')
-
+log_model=LogisticRegression(multi_class='multinomial', solver='lbfgs', penalty='l1', C=1.0)
+# C: float, default=1.0 --> Inverse of regularization strength; must be a positive float. Like in support vector machines, smaller values specify stronger regularization.
+# I'm suggesting L1/Lapalce since it has built-in feature selection, which can be helpful since we have so many predictors
 #Fit the model
 log_model.fit(X_train, y_train)
 
