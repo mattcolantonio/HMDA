@@ -71,11 +71,7 @@ cleaned_df = new_df.dropna() # a lot of data is categorical, imputing won't do u
 action_taken_mapping = {1: 1, 2: 1, 3: 2, 4: 3, 5: 3, 6: 3, 7:3, 8:3}
 cleaned_df['action_taken'] = cleaned_df['action_taken'].replace(action_taken_mapping)
 print(cleaned_df['action_taken'].value_counts()) # verify
-# calcualting no information rate, aka target for model accuracy:
-count_action_1 = cleaned_df['action_taken'].eq(1).sum()
-count_action_2_3 = cleaned_df['action_taken'].isin([2, 3]).sum()
-nir = count_action_1 / (count_action_1 + count_action_2_3)
-print("No Information Rate:", nir)
+
 # ie, a model predicting every applicant will be accepted will be 80% accurate- our model needs to be better than this rate at least
 
 cleaned_df['loan_to_value_ratio'] = pd.to_numeric(cleaned_df['loan_to_value_ratio'], errors='coerce') # coerce creates NaN for values that can't be converted to numeric
@@ -84,24 +80,36 @@ cleaned_df['property_value'] = pd.to_numeric(cleaned_df['property_value'], error
 print(cleaned_df['property_value'].dtype)
 
 #debt_to_income_ratio needs some work
+
+print(" Diego Original unique values:\n", cleaned_df['debt_to_income_ratio'].unique())
+# Removing special characters
 cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('[%<>]', '', regex=True)
+print("Diego After removing special characters:\n", cleaned_df['debt_to_income_ratio'].unique())
+
 # Replace 'Exempt' with NaN (you can use 0 or any other value as needed)
 cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].replace('Exempt', pd.NA)
+print("Diego After replacing 'Exempt':\n", cleaned_df['debt_to_income_ratio'].unique())
 # Convert ranges to average values
-cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].apply(lambda x: eval(x.replace('-', '+')) / 2 if pd.notna(x) else x)
-# Convert 'debt_to_income_ratio' to float
+
+# Diego: I think here is the error. 
+# cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].apply(lambda x: eval(x.replace('-', '+')) / 2 if pd.notna(x) else x)
+
+def convert_range_to_average(value):
+    if '-' in str(value):
+        lower, upper = value.split('-')
+        return (float(lower) + float(upper)) / 2
+    return value
+
+# Convert ranges to average values
+cleaned_df['debt_to_income_ratio'] = cleaned_df['debt_to_income_ratio'].apply(convert_range_to_average)
+# Convert to float, handling missing values
 cleaned_df['debt_to_income_ratio'] = pd.to_numeric(cleaned_df['debt_to_income_ratio'], errors='coerce')
-# Define the bin edges for the desired ranges
-bin_edges = [-float('inf'), 20, 30, 31, 49, 59, float('inf')]
-# Define the bin labels
-bin_labels = ['<20', '20-30', '30-49', '>50']
-# Create a new column with the specified bins
-cleaned_df['debt_to_income_ratio_range'] = pd.cut(cleaned_df['debt_to_income_ratio'], bins=bin_edges, labels=bin_labels)
-# Verify the result
-print(cleaned_df['debt_to_income_ratio_range'].value_counts())
-# Drop the original 'debt_to_income_ratio' column if you want
-# cleaned_df = cleaned_df.drop(columns=['debt_to_income_ratio']) # run when ratio_range is correct
-# maybe label encode the ratio, since order matters (higher number is meanigful)
+print("After converting to average values and float:\n", cleaned_df['debt_to_income_ratio'].unique())
+
+cleaned_df = cleaned_df.dropna()
+print("After converting to average values and float:\n", cleaned_df['debt_to_income_ratio'].unique())
+# Let's call it an imputation- we will mention in our final analysis. ie, we keep the averages as imputed debt-to-income 
+
 
 # Creating Dummy variables for categorical variables
 # dummies are best since order doesn't matter (as opposed to label encoding)
@@ -136,7 +144,12 @@ print(cleaned_df.columns) # looks better
 
 # For dummies, it is important to know the reference group- coefficents from models on dummies are coefficents relative to other groups
 # dummy variables for categorical_vars
-
+#%% No Information Rate
+# calcualting no information rate, aka target for model accuracy:
+count_action_1 = cleaned_df['action_taken'].eq(1).sum()
+count_action_2_3 = cleaned_df['action_taken'].isin([2, 3]).sum()
+nir = count_action_1 / (count_action_1 + count_action_2_3)
+print("No Information Rate:", nir)
 
 
 #%% Export cleaned data frame
@@ -173,7 +186,7 @@ columns_to_remove = ['STATEFP', 'COUNTYFP', 'TRACTCE', 'NAME', 'NAMELSAD', 'MTFC
 shp_data = shp_data.drop(columns=columns_to_remove)
 
 # Save the filtered data to a new shapefile
-#shp_data.to_file("/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/shp_data.shp", driver='ESRI Shapefile')
+shp_data.to_file("/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/shp_data.shp", driver='ESRI Shapefile')
 
 
 

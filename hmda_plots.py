@@ -26,6 +26,7 @@ import datetime
 
 #csv_file_path = '/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/cleaned_data.csv'
 df = pd.read_csv(csv_file_path)
+df = df[df['action_taken'] != 3] # remove 'others' 
 
 #%% Some plots
 import seaborn as sns
@@ -71,3 +72,7 @@ correlation_with_action_taken = correlation_matrix['action_taken']
 
 print("\nCorrelation with 'action_taken':")
 print(correlation_with_action_taken)
+
+#%% Spatial Analysis
+
+# "/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/shp_data.shp"
