@@ -1,0 +1,29 @@
+What needs to be edited/accomplished: 
+1. there is still an issue with the debt_to_income_ratio variable. The formatting of observations was messy and it doesn't appear to have been cleaned properly. It may be a good predictor so probably worth fixing.
+2. Make sure the dummy variables are correct and we can identify the reference variable (I put some code for this in already) 
+3. We may want to save the cleaned_df, or whichever df is used for running models, as a csv so we don't have to reclean the original dataset every time.  (Code is ready, just need cleaned data)
+	- it might even be worth creating a .shp file with geographic characteristics for creating maps and saving the .shp separately. (I have some code for this as well) 
+4. Might be useful to have some more visualizations, charts, graphs, and maps. Variable significance as determined by our final models may also illuminate which variables would benefit from graphing or mapping. 
+5. Since our logit is multinomial (3 possible outcomes), we must specify 'multinomial' when using sklearn package. 
+	- we might want to explore some different regularization methods for variable selection (I edited the latest edition (models_v03_submit) to include )
+6. The single tree is not very useful for analysis. Something like a Random Forest may be better since it determines feature importance by running up to 100 trees. 
+	- logit will probably be our best but we should have another model so we can cross-validate
+7. Some interactive dashboard that displays our model results and allows for parameters/hyperparameters to be adjusted. 
+I have code setup for saving the cleaned df and creating a .shp that will be executed once the cleaned_df is in its final form.
+
+I see the final Repository looking like this: 
+Code (folder)
+	- data merging script (hmda + census) 
+	- data cleaning script
+	- chart making/mapping script
+	modeling/model tuning script
+Raw Data (folder)
+	- original MA HMDA data csv
+Saved Data (folder)
+	- merged hmda + census csv file
+	- cleaned data csv
+	cleaned data/geographical .shp file
+Output (folder)
+	- final model(s) script
+	- data used for final models (csv) 
+	- models and analysis dashboard (HTML)
