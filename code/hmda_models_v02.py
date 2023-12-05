@@ -27,7 +27,6 @@ import datetime
 csv_file_path = '/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/cleaned_data.csv'
 df = pd.read_csv(csv_file_path)
 
-df = df[df['action_taken'] != 3] # remove 'others' , there are <100
 
 #%% no information rate
 count_accepted = df['action_taken'].eq(1).sum()
@@ -107,7 +106,7 @@ def visualize_feature_importance(rf_model, X_train):
 
 #%% Using functions
 
-#Loistic Regression
+#Logistic Regression
 # Train and evaluate logistic regression
 log_model, log_elapsed_time = train_and_evaluate_logistic_regression(
     X_train, X_test, y_train, y_test,
