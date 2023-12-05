@@ -1,0 +1,40 @@
+Tasks to do: 
+Logit/RF model refining and code commenting [Matt]
+	- created some functions, still need a bit of work but I will continue to work on this.
+ 	- if anyone else is interested in this part, feel free to give it a shot
+Corresponding model accuracy plots [Matt/Diego]
+	I have code for KL divergence Prof suggested to us
+plots /visualizations [Yesh/Anita/Matt/Diego]
+	I will work on some map visuals. Other plots and things are up for grabs
+Data dictionary [Yesh/Anita]
+dashboard/presentation [Yesh/Anita]
+	Good start on this by Anita, should be easier to edit with cleaner data
+upload virtualenv information [Matt]
+	I will upload my virtualenv package list to the repo when we are done
+
+Tasks Done: 
+1.  Collect data cleaning steps into a single function [Diego] 
+	[Matt] added two steps to the cleaning function, runs well, didn't really change the cleaned_df
+ 		just changed the target vars to 1,0 instead of 1,2
+   		and made sure income was nonnegative (there were a few nonnegative values for some reason that threw of my stratification method
+
+     
+
+
+I still see the final Repository looking like this: 
+Code (folder)
+	- data merging script (hmda + census) 
+	- data cleaning script
+	- chart making/mapping script
+	- modeling/model tuning script
+ 	- FINAL SCRIPT complete with functions
+Raw Data (folder)
+	- original MA HMDA data csv
+Saved Data (folder)
+	- merged hmda + census csv file
+	- cleaned data csv
+	cleaned data/geographical .shp file
+Output (folder)
+	- final model(s) script
+	- data used for final models (csv) 
+	- models and analysis dashboard (HTML)
