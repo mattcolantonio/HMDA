@@ -55,6 +55,11 @@ if selected_model == "Logistic Regression":
     st.subheader("Model Coefficients")
     coef_df = pd.DataFrame(log_model.coef_, columns=X_train.columns)
     st.write(coef_df)
+    
+    # Add ROC curve for Logistic Regression
+    st.subheader("ROC Curve - Logistic Regression")
+    models.plot_roc_curve(log_model, X_test, y_test, 'Logistic Regression')
+    st.pyplot()
 
 # In the "Random Forest" section
 elif selected_model == "Random Forest":
@@ -65,6 +70,11 @@ elif selected_model == "Random Forest":
 
     st.subheader("Random Forest Feature Importance")
     models.visualize_feature_importance(rf_model, X_train)
+    st.pyplot() 
+    
+    # Add ROC curve for Random Forest
+    st.subheader("ROC Curve - Random Forest")
+    models.plot_roc_curve(rf_model, X_test, y_test, 'Random Forest')
     st.pyplot() 
 
 # To show the dashboard, in command prompt or terminal of the virtual environment, type streamlit run best_my_dashboard.py
