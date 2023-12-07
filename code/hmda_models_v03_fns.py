@@ -6,7 +6,18 @@ Created on Wed Nov 29 18:34:14 2023
 @author: matthewcolantonio
 """
 
-#%%
+# %%
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.preprocessing import label_binarize
+from sklearn.tree import plot_tree
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, mutual_info_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+import datetime
+import seaborn as sns
+import pandas as pd
 import os
 import sys
 os.getcwd()
@@ -20,16 +31,15 @@ if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_pref
 else:
     # not in a virtual environment
     print("You are not in a virtual environment.")
-    
-#%% Load and explore data
-import pandas as pd
-import seaborn as sns
-import datetime
+
+# %% Load and explore data
 
 csv_file_path = '/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/hmda_and_census.csv'
 df = pd.read_csv(csv_file_path)
 
-#%%
+# %%
+
+
 def cleaningday(csv_file_path, output_directory):
     # Helper function to convert ranges to averages
     def convert_range_to_average(value):
@@ -68,7 +78,8 @@ def cleaningday(csv_file_path, output_directory):
     try:
         # Map 'action_taken' values
         action_taken_mapping = {1: 1, 2: 1, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3}
-        new_df['action_taken'] = new_df['action_taken'].replace(action_taken_mapping)
+        new_df['action_taken'] = new_df['action_taken'].replace(
+            action_taken_mapping)
 
         # Recode 'action_taken' to 0 and 1
         new_df['action_taken'] = (new_df['action_taken'] == 1).astype(int)
@@ -84,21 +95,28 @@ def cleaningday(csv_file_path, output_directory):
     except Exception as e:
         print(f"Error in ensuring 'income' is nonnegative: {e}")
         return
-    
+
     try:
         # Convert 'loan_to_value_ratio' and 'property_value' to numeric
-        new_df['loan_to_value_ratio'] = pd.to_numeric(new_df['loan_to_value_ratio'], errors='coerce')
-        new_df['property_value'] = pd.to_numeric(new_df['property_value'], errors='coerce')
-        print("Conversion to numeric types done for loan_to_value_ratio and property_value.")
+        new_df['loan_to_value_ratio'] = pd.to_numeric(
+            new_df['loan_to_value_ratio'], errors='coerce')
+        new_df['property_value'] = pd.to_numeric(
+            new_df['property_value'], errors='coerce')
+        print(
+            "Conversion to numeric types done for loan_to_value_ratio and property_value.")
     except Exception as e:
-        print(f"Error in converting loan_to_value_ratio and property_value to numeric: {e}")
+        print(
+            f"Error in converting loan_to_value_ratio and property_value to numeric: {e}")
         return
 
     try:
         # Clean 'debt_to_income_ratio'
-        new_df['debt_to_income_ratio'] = new_df['debt_to_income_ratio'].replace('[%<>]', '', regex=True).replace('Exempt', pd.NA)
-        new_df['debt_to_income_ratio'] = new_df['debt_to_income_ratio'].apply(convert_range_to_average)
-        new_df['debt_to_income_ratio'] = pd.to_numeric(new_df['debt_to_income_ratio'], errors='coerce')
+        new_df['debt_to_income_ratio'] = new_df['debt_to_income_ratio'].replace(
+            '[%<>]', '', regex=True).replace('Exempt', pd.NA)
+        new_df['debt_to_income_ratio'] = new_df['debt_to_income_ratio'].apply(
+            convert_range_to_average)
+        new_df['debt_to_income_ratio'] = pd.to_numeric(
+            new_df['debt_to_income_ratio'], errors='coerce')
         print("debt_to_income_ratio cleaned and converted.")
     except Exception as e:
         print(f"Error in cleaning debt_to_income_ratio: {e}")
@@ -107,9 +125,11 @@ def cleaningday(csv_file_path, output_directory):
     try:
         # Handle categorical variables and create dummies
         categorical_vars = ["derived_ethnicity", "derived_race", "derived_sex",
-            "derived_loan_product_type", "applicant_age", "derived_dwelling_category"]
-        values_to_remove = ['Free Form Text Only', 'Sex Not Available', '8888', 'Joint', 'Race Not Available']
-        new_df = new_df[~new_df[categorical_vars].isin(values_to_remove).any(axis=1)]
+                            "derived_loan_product_type", "applicant_age", "derived_dwelling_category"]
+        values_to_remove = ['Free Form Text Only',
+                            'Sex Not Available', '8888', 'Joint', 'Race Not Available']
+        new_df = new_df[~new_df[categorical_vars].isin(
+            values_to_remove).any(axis=1)]
 
         for var in categorical_vars:
             dummies = pd.get_dummies(new_df[var], prefix=var, drop_first=True)
@@ -139,13 +159,14 @@ def cleaningday(csv_file_path, output_directory):
     return new_df
 
 
-#%% 
+# %%
 # Example usage
 csv_file_path = '/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/hmda_and_census.csv'
 output_directory = "/Users/matthewcolantonio/Documents/Research/HMDA/saveddata/"
 cleaned_df = cleaningday(csv_file_path, output_directory)
 
-#%% Creating the function for the Summary statistics and correlation plot
+# %% Creating the function for the Summary statistics and correlation plot
+
 
 def summarize_and_visualize(df, corr_threshold=0.3):
     try:
@@ -168,7 +189,8 @@ def summarize_and_visualize(df, corr_threshold=0.3):
     try:
         # Displaying Summary Table
         print("Enhanced Summary Statistics:")
-        print(summary.to_string())  # Converts the DataFrame to a string representation
+        # Converts the DataFrame to a string representation
+        print(summary.to_string())
     except Exception as e:
         print(f"Error in displaying summary statistics: {e}")
         return
@@ -179,38 +201,41 @@ def summarize_and_visualize(df, corr_threshold=0.3):
         mask = abs(corr_matrix) < corr_threshold
 
         plt.figure(figsize=(20, 15))
-        sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap='coolwarm', mask=mask)
+        sns.heatmap(corr_matrix, annot=True, fmt=".2f",
+                    cmap='coolwarm', mask=mask)
         plt.title("Correlation Matrix")
         plt.show()
     except Exception as e:
         print(f"Error in generating correlation plot: {e}")
-    
-# Usage 
-#%%
-summarize_and_visualize(cleaned_df)
-#%% no information rate
+
+
+# Usage
+# %%
+summarize_and_visualize(cleaned_df)  # CHECK
+# %% no information rate
 count_accepted = cleaned_df['action_taken'].eq(1).sum()
 count_denied = cleaned_df['action_taken'].eq(0).sum()
 nir = count_accepted / (count_accepted + count_denied)
 print("No Information Rate:", nir)
 
 
-#%% 
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, mutual_info_score
-from sklearn.tree import plot_tree
-from sklearn.preprocessing import label_binarize
-import matplotlib.pyplot as plt
+# %%
 
-#%% Functions
+# %% Functions
 
-def split_data(df, target_column='action_taken', test_size=0.2, random_state=42):
-    X = df.drop([target_column], axis=1)
+
+def split_data(df, target_column='action_taken', test_size=0.2, random_state=42, exclude_columns=None):
+    if exclude_columns is None:
+        exclude_columns = []
+
+    # Exclude specified columns from features
+    X = df.drop([target_column] + exclude_columns, axis=1)
+
     y = df[target_column]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state)
     return X_train, X_test, y_train, y_test
+
 
 def train_and_evaluate_logistic_regression(X_train, X_test, y_train, y_test, solver='liblinear', penalty='l1', C=1.0):
     start_time = datetime.datetime.now()
@@ -228,9 +253,11 @@ def train_and_evaluate_logistic_regression(X_train, X_test, y_train, y_test, sol
     print("Elapsed Time:", elapsed_time)
     return log_model
 
+
 def train_and_evaluate_random_forest(X_train, X_test, y_train, y_test):
     start_time = datetime.datetime.now()
-    rf_model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
+    rf_model = RandomForestClassifier(
+        n_estimators=100, random_state=42, class_weight='balanced')
     rf_model.fit(X_train, y_train)
     y_pred = rf_model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
@@ -242,24 +269,27 @@ def train_and_evaluate_random_forest(X_train, X_test, y_train, y_test):
     print("Elapsed Time:", elapsed_time)
     return rf_model
 
+
 def visualize_random_forest_tree(rf_model, X_train):
     estimator = rf_model.estimators_[0]
-    plt.figure(figsize=(20,10))
-    plot_tree(estimator, 
-              filled=True, 
-              feature_names=X_train.columns, 
-              class_names=['Class1', 'Class2', 'Class3'], 
+    plt.figure(figsize=(20, 10))
+    plot_tree(estimator,
+              filled=True,
+              feature_names=X_train.columns,
+              class_names=['Class1', 'Class2', 'Class3'],
               max_depth=3)
     plt.show()
+
 
 def visualize_feature_importance(rf_model, X_train):
     feature_importances = pd.DataFrame(rf_model.feature_importances_,
                                        index=X_train.columns,
                                        columns=['importance']).sort_values('importance', ascending=False)
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(10, 6))
     feature_importances[:10].plot(kind='barh')  # Top 10 features
     plt.title('Feature Importances in Random Forest')
     plt.show()
+
 
 def kl_divergence(log_model, rf_model, X_test):
     log_probs = log_model.predict_proba(X_test)
@@ -267,14 +297,40 @@ def kl_divergence(log_model, rf_model, X_test):
 
     # Binarize class labels
     y_true = label_binarize(y_test, classes=log_model.classes_)
-    log_labels = label_binarize(log_model.predict(X_test), classes=log_model.classes_)
-    rf_labels = label_binarize(rf_model.predict(X_test), classes=rf_model.classes_)
+    log_labels = label_binarize(log_model.predict(
+        X_test), classes=log_model.classes_)
+    rf_labels = label_binarize(rf_model.predict(
+        X_test), classes=rf_model.classes_)
 
     # Compute KL Divergence
-    kl_div = mutual_info_score(y_true.flatten(), log_labels.flatten()) - mutual_info_score(y_true.flatten(), rf_labels.flatten())
-    print(f"KL Divergence between Logistic Regression and Random Forest: {kl_div}")
+    kl_div = mutual_info_score(y_true.flatten(), log_labels.flatten(
+    )) - mutual_info_score(y_true.flatten(), rf_labels.flatten())
+    print(
+        f"KL Divergence between Logistic Regression and Random Forest: {kl_div}")
 
-#%% Using functions
+
+def plot_roc_curve(model, X_test, y_test, model_name):
+    # Get the probability for the positive class
+    y_prob_binary = model.predict_proba(X_test)[:, 1]
+
+    # Compute ROC curve and ROC area
+    fpr, tpr, _ = roc_curve(y_test, y_prob_binary)
+    roc_auc = roc_auc_score(y_test, y_prob_binary)
+
+    # Plot the ROC curve
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr, tpr, color='darkorange', lw=2,
+             label=f'ROC curve (area = {roc_auc:.2f})')
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title(
+        f'Receiver Operating Characteristic (ROC) Curve for {model_name}')
+    plt.legend(loc="lower right")
+    plt.show()
+
+#%% Using functions w/out stratifying to account for Income
+
 
 # Split data
 X_train, X_test, y_train, y_test = split_data(cleaned_df)
@@ -282,9 +338,9 @@ X_train, X_test, y_train, y_test = split_data(cleaned_df)
 # Logistic Regression
 log_model = train_and_evaluate_logistic_regression(
     X_train, X_test, y_train, y_test,
-    solver='liblinear', # edit solver
-    penalty='l1', # edit penalty
-    C=1.0 # edit regularization strength
+    solver='liblinear',  # edit solver
+    penalty='l1',  # edit penalty
+    C=1.0  # edit regularization strength
 )
 
 # Random Forest
@@ -299,29 +355,36 @@ visualize_feature_importance(rf_model, X_train)
 # Compute KL Divergence
 kl_divergence(log_model, rf_model, X_test)
 
-#%%% Stratifying to account for Income
+# %% Stratifying to account for Income
 
 # Add this line to stratify cleaned_df into quintiles based on the 'income' column
 cleaned_df['income_group'] = pd.qcut(cleaned_df['income'], q=5, labels=False)
-
 # Now 'income_group' column represents the quintiles, 0 to 4
+
+# we have geographic features- these are identifiers only
+exclude_columns = ['census_tract', 'derived_msa.md', 'county_code']
 
 # Split data within each income stratum
 stratified_splits = {}
 for income_group in cleaned_df['income_group'].unique():
     income_df = cleaned_df[cleaned_df['income_group'] == income_group]
-    X_train, X_test, y_train, y_test = split_data(income_df)
+    X_train, X_test, y_train, y_test = split_data(
+        income_df, exclude_columns=exclude_columns)
     stratified_splits[income_group] = (X_train, X_test, y_train, y_test)
+    
+# stratified_splits is a dictionary-like structure where keys are income groups, 
+#and values are tuples containing training and testing data.
 
-# Logistic Regression and Random Forest for each income stratum
+# Logistic Regression and Random Forest for each income stratum - Data Dictionary
 logistic_models = {}
 random_forest_models = {}
 
 for income_group, (X_train, X_test, y_train, y_test) in stratified_splits.items():
     print(f"\nIncome Group: {income_group}")
-    
+
     # Logistic Regression
-    log_model = train_and_evaluate_logistic_regression(X_train, X_test, y_train, y_test)
+    log_model = train_and_evaluate_logistic_regression(
+        X_train, X_test, y_train, y_test)
     logistic_models[income_group] = log_model
 
     # Access and print coefficients
@@ -331,14 +394,14 @@ for income_group, (X_train, X_test, y_train, y_test) in stratified_splits.items(
     print(coef_df)
 
     # Random Forest
-    rf_model = train_and_evaluate_random_forest(X_train, X_test, y_train, y_test)
+    rf_model = train_and_evaluate_random_forest(
+        X_train, X_test, y_train, y_test)
     random_forest_models[income_group] = rf_model
 
-# Evaluate coefficients
+# Evaluate coefficients - logit models
 # logistic_models is a dictionary where keys are income group labels, and values are logistic regression models
 # Create a DataFrame to store coefficients for each income group
 coefficients_df = pd.DataFrame()
-
 # Loop through each income group and extract coefficients
 for income_group, log_model in logistic_models.items():
     # Extract coefficients and feature names
@@ -346,14 +409,16 @@ for income_group, log_model in logistic_models.items():
     feature_names = X_train.columns
 
     # Create a DataFrame for the current income group
-    income_group_df = pd.DataFrame({'Feature': feature_names, f'Coefficient_{income_group}': coefficients})
+    income_group_df = pd.DataFrame(
+        {'Feature': feature_names, f'Coefficient_{income_group}': coefficients})
 
     # Set 'Feature' as the index for the first DataFrame
     if coefficients_df.empty:
         coefficients_df = income_group_df.set_index('Feature')
     else:
         # Merge with the overall coefficients DataFrame using the 'Feature' index
-        coefficients_df = coefficients_df.merge(income_group_df.set_index('Feature'), left_index=True, right_index=True, how='outer')
+        coefficients_df = coefficients_df.merge(income_group_df.set_index(
+            'Feature'), left_index=True, right_index=True, how='outer')
 
 # Reset the index to make 'Feature' a regular column
 coefficients_df.reset_index(inplace=True)
@@ -362,13 +427,16 @@ coefficients_df.reset_index(inplace=True)
 print(coefficients_df)
 
 
-# Visualize random forest tree and feature importance for one income group (you can customize this)
-visualize_random_forest_tree(random_forest_models[cleaned_df['income_group'].unique()[0]], stratified_splits[cleaned_df['income_group'].unique()[0]][0])
-visualize_feature_importance(random_forest_models[cleaned_df['income_group'].unique()[0]], stratified_splits[cleaned_df['income_group'].unique()[0]][0])
+# Visualize random forest tree and feature importance for one income group
+# visualize_random_forest_tree(random_forest_models[cleaned_df['income_group'].unique()[0]], stratified_splits[cleaned_df['income_group'].unique()[0]][0])
+visualize_feature_importance(
+    random_forest_models[cleaned_df['income_group'].unique()[0]],
+    stratified_splits[cleaned_df['income_group'].unique()[0]][0])
 
 # Compute KL Divergence for each income stratum
 for income_group, (X_train, X_test, y_train, y_test) in stratified_splits.items():
-    kl_divergence(logistic_models[income_group], random_forest_models[income_group], X_test)
+    kl_divergence(logistic_models[income_group],
+                  random_forest_models[income_group], X_test)
 # negative KL divergence outputs means RF is closer to true distribution of outcomes
 # low values mean the models are pretty similar in their distributions
 # Note: 'income_group' column represents quintiles; adjust visualization and analysis accordingly
@@ -376,16 +444,25 @@ for income_group, (X_train, X_test, y_train, y_test) in stratified_splits.items(
 # what is feature importance of ['x'] variabe
 for income_group, rf_model in random_forest_models.items():
     # Find the index of the feature in the columns
-    feature_index = X_train.columns.get_loc('derived_race_Black or African American')
-    
+    feature_index = X_train.columns.get_loc(
+        'derived_race_Black or African American')
+
     # Print the feature importance for the specified column in each stratum
     feature_importance = rf_model.feature_importances_[feature_index]
-    print(f"Income Group: {income_group}, Feature Importance ('derived_race_Black or African American'): {feature_importance}")
+    print(
+        f"Income Group: {income_group}, Feature Importance ('derived_race_Black or African American'): {feature_importance}")
 
 # what do the strata look like? looks good to me
 for income_group in stratified_splits.keys():
     # Print the income range for each stratum
-    income_range = cleaned_df.loc[cleaned_df['income_group'] == income_group, 'income'].agg(['min', 'max'])
-    print(f"Income Group: {income_group}, Income Range: {income_range['min']} to {income_range['max']}")
+    income_range = cleaned_df.loc[cleaned_df['income_group']
+                                  == income_group, 'income'].agg(['min', 'max'])
+    print(
+        f"Income Group: {income_group}, Income Range: {income_range['min']} to {income_range['max']}")
+
+
+# ROC function Usage
+plot_roc_curve(rf_model, X_test, y_test, 'Random Forest')
+plot_roc_curve(log_model, X_test, y_test, 'Logistic Regression')
 
 
