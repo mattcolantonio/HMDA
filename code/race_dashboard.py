@@ -23,7 +23,7 @@ X_train, X_test, y_train, y_test = models.split_data(cleaned_df)
 
 #%% dashboard/streamlit app
 
-st.title("Model Evaluation and Visualization")
+st.title("Count of Action Taken based on each Ethnicity is True vs. False")
 
 # Sidebar for user input - Race
 st.sidebar.title("Select Race")
@@ -42,7 +42,7 @@ selected_race_column = st.sidebar.selectbox(
 )
 
 # Action Taken Distribution
-st.title("Action Taken Distribution by Race")
+st.title("Count of Action Taken based on each Ethnicity is True vs. False")
 
 # Create a DataFrame with selected race column and action_taken from X_train and y_train
 plot_df = pd.concat([X_train[[selected_race_column]], y_train], axis=1)
