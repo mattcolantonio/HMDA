@@ -159,60 +159,47 @@ csv_file_path = "/Users/diegodearmas/Documents/ADEC7430/2023Fall_ADEC743001/hmda
 output_directory = "/Users/diegodearmas/Documents/ADEC7430/2023Fall_ADEC743001/"
 cleaned_df = cleaningday(csv_file_path, output_directory)
 
-# %% Creating the function for the Summary statistics and correlation plot
 
+#%%
 
-def summarize_and_visualize(df, corr_threshold=0.3):
-    try:
-        # Calculating enhanced summary statistics
-        summary = pd.DataFrame()
-        summary['mean'] = df.mean()
-        summary['std'] = df.std()
-        summary['min'] = df.min()
-        summary['25%'] = df.quantile(0.25)
-        summary['50%'] = df.quantile(0.5)
-        summary['75%'] = df.quantile(0.75)
-        summary['max'] = df.max()
-        summary['skew'] = df.skew()
-        summary['kurtosis'] = df.kurtosis()
-        summary['missing_values'] = df.isna().sum()
-    except Exception as e:
-        print(f"Error in calculating summary statistics: {e}")
+def data_summary(df):
+    # Step 1: Generate summary statistics for numeric variables
+    numeric_data = df.select_dtypes(include=[np.number])
+    numeric_summary = numeric_data.describe()
+    print("Summary of Numeric Variables:")
+    print(numeric_summary)
+
+    # Step 2: Calculate No Information Rate (NIR)
+    count_accepted = df['action_taken'].eq(1).sum()
+    count_denied = df['action_taken'].eq(0).sum()
+    nir = count_accepted / (count_accepted + count_denied)
+    print("No Information Rate:", nir)
+
+    # Step 3: Correlation analysis and visualization
+    correlation_vars = ['loan_amount', 'income', 'action_taken', 
+                        'derived_race_Black or African American', 
+                        'derived_race_White', 'loan_to_value_ratio']
+
+    # Check if all correlation variables are in the DataFrame
+    if not all(item in df.columns for item in correlation_vars):
+        print("Not all specified variables are present in the DataFrame.")
         return
 
-    try:
-        # Displaying Summary Table
-        print("Enhanced Summary Statistics:")
-        # Converts the DataFrame to a string representation
-        print(summary.to_string())
-    except Exception as e:
-        print(f"Error in displaying summary statistics: {e}")
-        return
+    correlation_data = df[correlation_vars]  # Subset the DataFrame with the selected variables
 
-    try:
-        # Calculating and plotting the improved correlation plot
-        corr_matrix = df.corr()
-        mask = abs(corr_matrix) < corr_threshold
+    # Create a pair plot for the selected variables
+    sns.pairplot(correlation_data, hue='action_taken', palette='viridis')
+    plt.show()
 
-        plt.figure(figsize=(20, 15))
-        sns.heatmap(corr_matrix, annot=True, fmt=".2f",
-                    cmap='coolwarm', mask=mask)
-        plt.title("Correlation Matrix")
-        plt.show()
-    except Exception as e:
-        print(f"Error in generating correlation plot: {e}")
+    # Create a correlation heatmap
+    correlation_matrix = correlation_data.corr()
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', linewidths=0.5)
+    plt.title('Correlation Heatmap')
+    plt.show()
 
-# %% Usage
+#%% 
 
-summarize_and_visualize(cleaned_df)
-
-#%% no information rate
-
-count_accepted = cleaned_df['action_taken'].eq(1).sum()
-count_denied = cleaned_df['action_taken'].eq(0).sum()
-nir = count_accepted / (count_accepted + count_denied)
-print("No Information Rate:", nir)
-
+data_summary(cleaned_df)
 
 #%% 
 from sklearn.model_selection import train_test_split
