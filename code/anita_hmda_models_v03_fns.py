@@ -20,6 +20,8 @@ import seaborn as sns
 import pandas as pd
 import os
 import sys
+import numpy as np
+
 os.getcwd()
 # path="/Users/matthewcolantonio/Documents/Research/HMDA"
 # os.chdir(path)
@@ -167,20 +169,24 @@ cleaned_df = cleaningday(csv_file_path, output_directory)
 
 # %% Creating the function for the Summary statistics and correlation plot
 
-
 def summarize_and_visualize(df, corr_threshold=0.3):
     try:
-        # Calculating enhanced summary statistics
-        summary = pd.DataFrame()
-        summary['mean'] = df.mean()
-        summary['std'] = df.std()
-        summary['min'] = df.min()
-        summary['25%'] = df.quantile(0.25)
-        summary['50%'] = df.quantile(0.5)
-        summary['75%'] = df.quantile(0.75)
-        summary['max'] = df.max()
-        summary['skew'] = df.skew()
-        summary['kurtosis'] = df.kurtosis()
+        # Handling boolean values by converting them to numeric so that we can calculate summary statistics
+        numeric_df = df.apply(lambda x: pd.to_numeric(x, errors='coerce'))
+        # Selecting only numeric columns for summary statistics
+        numeric_summary = numeric_df.describe().transpose()
+
+        # Handling non-numeric columns
+        non_numeric_columns = df.select_dtypes(exclude=[np.number]).columns
+        non_numeric_summary = pd.DataFrame(index=non_numeric_columns)
+        non_numeric_summary['unique_values'] = df[non_numeric_columns].nunique()
+        non_numeric_summary['top_value'] = df[non_numeric_columns].mode().iloc[0]
+        non_numeric_summary['frequency'] = df[non_numeric_columns].apply(lambda x: x.value_counts().index[0])
+
+        # Combining numeric and non-numeric summaries
+        summary = pd.concat([numeric_summary, non_numeric_summary], axis=1)
+
+        # Handling missing values
         summary['missing_values'] = df.isna().sum()
     except Exception as e:
         print(f"Error in calculating summary statistics: {e}")
@@ -197,7 +203,7 @@ def summarize_and_visualize(df, corr_threshold=0.3):
 
     try:
         # Calculating and plotting the improved correlation plot
-        corr_matrix = df.corr()
+        corr_matrix = numeric_df.corr()
         mask = abs(corr_matrix) < corr_threshold
 
         plt.figure(figsize=(20, 15))
@@ -205,8 +211,13 @@ def summarize_and_visualize(df, corr_threshold=0.3):
                     cmap='coolwarm', mask=mask)
         plt.title("Correlation Matrix")
         plt.show()
+        return {
+            'correlation_plot': plt,  # Passing the figure object
+            'summary_statistics': summary.to_string()
+        }
     except Exception as e:
         print(f"Error in generating correlation plot: {e}")
+
 
 
 # Usage
@@ -331,31 +342,29 @@ def plot_roc_curve(model, X_test, y_test, model_name):
 
 #%% Using functions w/out stratifying to account for Income
 
-# =============================================================================
-# 
-# # Split data
-# X_train, X_test, y_train, y_test = split_data(cleaned_df)
-# 
-# # Logistic Regression
-# log_model = train_and_evaluate_logistic_regression(
-#     X_train, X_test, y_train, y_test,
-#     solver='liblinear',  # edit solver
-#     penalty='l1',  # edit penalty
-#     C=1.0  # edit regularization strength
-# )
-# 
-# # Random Forest
-# rf_model = train_and_evaluate_random_forest(X_train, X_test, y_train, y_test)
-# 
-# # Visualize random forest tree
-# visualize_random_forest_tree(rf_model, X_train)
-# 
-# # Visualize feature importance
-# visualize_feature_importance(rf_model, X_train)
-# 
-# # Compute KL Divergence
-# kl_divergence(log_model, rf_model, X_test)
-# =============================================================================
+
+# Split data
+X_train, X_test, y_train, y_test = split_data(cleaned_df)
+
+# Logistic Regression
+log_model = train_and_evaluate_logistic_regression(
+    X_train, X_test, y_train, y_test,
+    solver='liblinear',  # edit solver
+    penalty='l1',  # edit penalty
+    C=1.0  # edit regularization strength
+)
+
+# Random Forest
+rf_model = train_and_evaluate_random_forest(X_train, X_test, y_train, y_test)
+
+# Visualize random forest tree
+visualize_random_forest_tree(rf_model, X_train)
+
+# Visualize feature importance
+visualize_feature_importance(rf_model, X_train)
+
+# Compute KL Divergence
+kl_divergence(log_model, rf_model, X_test)
 
 # %% Stratifying to account for Income
 # =============================================================================

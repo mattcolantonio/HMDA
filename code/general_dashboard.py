@@ -11,6 +11,9 @@ import anita_hmda_models_v03_fns as models
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+
 
 
 #%% import data
@@ -42,11 +45,12 @@ log_model = models.train_and_evaluate_logistic_regression(
 # Random Forest
 rf_model = models.train_and_evaluate_random_forest(X_train, X_test, y_train, y_test)
 
+
 # Sidebar for user input - Model
 st.sidebar.title("Select Model")
 selected_model = st.sidebar.selectbox(
     "Select Model:",
-    ["Logistic Regression", "Random Forest"]
+    ["Logistic Regression", "Random Forest", "Correlation and Statistics"]
 )
 
 # Display model-specific information
@@ -76,5 +80,17 @@ elif selected_model == "Random Forest":
     st.subheader("ROC Curve - Random Forest")
     models.plot_roc_curve(rf_model, X_test, y_test, 'Random Forest')
     st.pyplot() 
+# In the Correlation section
 
+elif selected_model == "Correlation and Statistics":
+    st.header("Correlation and Statistics")
+    
+    # Call the function to get the correlation plot and summary statistics
+    correlation_data = models.summarize_and_visualize(cleaned_df)
+    print(correlation_data) 
+    # Display the correlation plot
+    st.subheader("Correlation Plot")
+    st.pyplot(correlation_data['correlation_plot'])
+
+    
 # To show the dashboard, in command prompt or terminal of the virtual environment, type streamlit run best_my_dashboard.py
