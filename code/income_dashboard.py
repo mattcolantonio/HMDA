@@ -8,7 +8,7 @@ Created on Thu Dec  7 12:48:14 2023
 #%% stratified income dashboard
 
 #%% import packages
-import anita_hmda_models_v03_fns as models
+import dashboard_fns as models
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
